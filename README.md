@@ -22,13 +22,7 @@ http.OnHttpContext += (s, e) => {
         Error = (s, e) => e.ErrorContext.Handled = true
     });
     Console.WriteLine(requestMsg);
-    Config.MyResponseHeaders().Select(x => {
-        http.Response.AddHeader(x.Key, x.Value);
-        return x;
-    });
-    byte[] responseBytes = Encoding.UTF8.GetBytes(requestMsg);
-    http.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-    http.Response.OutputStream.Close();
+    http.Resolve(http.Request);
 };
 
 http.OnHttpRequest += (s, e) => {
