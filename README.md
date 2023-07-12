@@ -1,5 +1,5 @@
 # WebServerSample
-An http server with basic tools for multipurpose use
+Http server with basic tools for multipurpose use
 
 ![metinyakar.WebServerSample](https://raw.githubusercontent.com/meto260/WebServerSample/master/webserver_ss.png)
 
