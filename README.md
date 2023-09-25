@@ -5,7 +5,10 @@ Http server with basic tools for multipurpose use
 
   Example:
 ```csharp
-Config.Prepare();
+using System.Net;
+using System.Text.Json;
+
+Config.Prepare(); 
 var http = new Http();
 
 http.OnHttpStarted += (s, e) => {
@@ -17,12 +20,8 @@ http.OnHttpListening += (s, e) => {
 };
 
 http.OnHttpContext += (s, e) => {
-    var requestMsg = JsonConvert.SerializeObject(http.Request, new JsonSerializerSettings {
-        Formatting = Formatting.Indented,
-        Error = (s, e) => e.ErrorContext.Handled = true
-    });
-    Console.WriteLine(requestMsg);
-    http.Resolve(http.Request);
+    var message = http.Receive(http.Request);
+    http.Send(message);
 };
 
 http.OnHttpRequest += (s, e) => {
