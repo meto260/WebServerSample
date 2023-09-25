@@ -1,4 +1,6 @@
-﻿public class Http {
+﻿using System.Text.Json;
+
+public class Http : IDisposable {
     public HttpListener http;
     public HttpListenerContext HttpContext;
     public HttpListenerRequest Request;
@@ -26,29 +28,41 @@
         OnHttpContext?.Invoke(listener, EventArgs.Empty);
     }
 
-    public void Resolve(dynamic body, CookieCollection cookies= null, Dictionary<string, string> headers = null) {
+    public string Receive(HttpListenerRequest request, bool waitForResponse=true) {
+        using var ms = new MemoryStream();
+        request.InputStream.CopyTo(ms);
+
+        var requestMessage = Encoding.UTF8.GetString(ms.ToArray());
+        if (!waitForResponse) {
+            HttpContext.Response.Close();
+        }
+        return requestMessage;
+    }
+
+    public void Send(string message, CookieCollection cookies = null, Dictionary<string, string> headers = null) {
+        if (!HttpContext.Response.OutputStream.CanWrite)
+            throw new Exception("Stream closed");
+
         headers ??= new Dictionary<string, string>();
         HttpContext.Response.Cookies = cookies;
-        foreach(var hd in Config.MyResponseHeaders()) {
+        foreach (var hd in Config.MyResponseHeaders()) {
             HttpContext.Response.AddHeader(hd.Key, hd.Value);
         }
         HttpContext.Response.AddHeader("license", "metinyakar.net");
         foreach (var hd in headers) {
             HttpContext.Response.AddHeader(hd.Key, hd.Value);
         }
-
-        string requestMsg = JsonConvert.SerializeObject(body, new JsonSerializerSettings {
-            Error = (s, e) => e.ErrorContext.Handled = true
-        });
-
-        byte[] responseBytes = Encoding.UTF8.GetBytes(requestMsg);
+        var responseBytes = Encoding.UTF8.GetBytes(message);
         HttpContext.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-        HttpContext.Response.OutputStream.Close();
+        HttpContext.Response.Close();
     }
-
 
     public event EventHandler OnHttpContext;
     public event EventHandler OnHttpStarted;
     public event EventHandler OnHttpListening;
     public event EventHandler OnHttpRequest;
+
+    public void Dispose() {
+        HttpContext.Response.Close();
+    }
 }
